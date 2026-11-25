@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${pageTitle} + ' · Graphic Era'">Event Form · Graphic Era University</title>
+    <link rel="icon" type="image/jpeg" th:href="@{/images/uu-logo.jpg}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<!-- Glowing Ambient Mesh Layer -->
+<div class="ambient-mesh" aria-hidden="true">
+    <div class="mesh-orb orb-1"></div>
+    <div class="mesh-orb orb-2"></div>
+    <div class="mesh-orb orb-3"></div>
+</div>
+
+<div class="app-shell">
+    <header class="topbar">
+        <a class="brand" th:href="@{/dashboard}">
+            <span class="brand-mark">
+                <img th:src="@{/images/uu-logo.jpg}" alt="Graphic Era Logo" class="brand-logo">
+            </span>
+            <span>Graphic Era University</span>
+        </a>
+        <nav class="nav-tabs" aria-label="Main navigation">
+            <a class="nav-tab" th:href="@{/dashboard}">Dashboard</a>
+            <a class="nav-tab" th:href="@{/dashboard#events}">Events</a>
+            <a class="nav-tab active" th:href="@{/events/new}">Create event</a>
+        </nav>
+        <form th:action="@{/logout}" method="post">
+            <button class="button button-quiet" type="submit">Log out</button>
+        </form>
+    </header>
+
+    <main class="form-page">
+        <a class="back-link" th:href="@{/dashboard}">← Back to Campus Calendar</a>
+
+        <div class="form-layout-grid">
+            <section class="form-card glass-panel">
+                <div class="form-card-header">
+                    <p class="eyebrow">EVENT MANAGEMENT</p>
+                    <h1 th:text="${pageTitle}">Create an event</h1>
+                    <p class="muted">Publish and configure campus fest events with real-time seat management.</p>
+                </div>
+
+                <form th:action="@{/events/save}" th:object="${event}" method="post" id="eventEditorForm" novalidate>
+                    <input type="hidden" th:field="*{id}">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="title">Event Title <span class="required-star">*</span></label>
+                            <input id="title" type="text" th:field="*{title}"
+                                   placeholder="e.g., Battle of the Bands"
+                                   maxlength="120"
+                                   required>
+                            <p class="field-error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></p>
+                            <small class="field-hint">Max 120 characters</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row-duo">
+                        <div class="form-group">
+                            <label for="category">Category <span class="required-star">*</span></label>
+                            <select id="category" th:field="*{category}" class="form-select" required>
+                                <option value="" disabled selected>Select category...</option>
+                                <option value="Cultural">🎭 Cultural Event</option>
+                                <option value="Technical">⚡ Technical Event</option>
+                                <option value="Management">📈 Management Event</option>
+                                <option value="Sports">🏆 Sports Event</option>
+                            </select>
+                            <p class="field-error" th:if="${#fields.hasErrors('category')}" th:errors="*{category}"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="organizer">Organizing Body / Club</label>
+                            <input id="organizer" type="text" th:field="*{organizer}"
+                                   placeholder="e.g., ACM Student Chapter">
+                        </div>
+                    </div>
+
+                    <div class="form-row-duo">
+                        <div class="form-group">
+                            <label for="location">Venue / Location <span class="required-star">*</span></label>
+                            <input id="location" type="text" th:field="*{location}"
+                                   placeholder="e.g., Open Air Amphitheater" required>
+                            <p class="field-error" th:if="${#fields.hasErrors('location')}" th:errors="*{location}"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="eventDate">Date and Time <span class="required-star">*</span></label>
+                            <input id="eventDate" type="datetime-local" th:field="*{eventDate}" required>
+                            <p class="field-error" th:if="${#fields.hasErrors('eventDate')}" th:errors="*{eventDate}"></p>
+                        </div>
+                    </div>
+
+                    <div class="form-row-duo">
+                        <div class="form-group">
+                            <label for="capacity">Total Capacity (Seats) <span class="required-star">*</span></label>
+                            <input id="capacity" type="number" min="1" max="10000" th:field="*{capacity}"
+                                   placeholder="e.g., 250" required>
+                            <p class="field-error" th:if="${#fields.hasErrors('capacity')}" th:errors="*{capacity}"></p>
+                            <small class="field-hint" id="capacityFeedback">Minimum 1 attendee</small>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="registeredCount">Already Registered Attendees</label>
+                            <input id="registeredCount" type="number" min="0" th:field="*{registeredCount}"
+                                   placeholder="0">
+                            <small class="field-hint" id="seatStatusIndicator">Spots available calculated automatically</small>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="description">Event Description <span class="required-star">*</span></label>
+                        <textarea id="description" rows="4" th:field="*{description}"
+                                  placeholder="Provide excitement, itinerary, prize pool details, or special instructions..."
+                                  maxlength="1500" required></textarea>
+                        <div class="textarea-footer">
+                            <p class="field-error" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></p>
+                            <span class="char-counter" id="charCount">0 / 1500</span>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a class="button button-outline" th:href="@{/dashboard}">Cancel</a>
+                        <button class="button button-primary" type="submit">
+                            <span th:text="${event.id == null ? 'Publish Event' : 'Save Changes'}">Save Event</span>
+                            <span>→</span>
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            
+            <aside class="preview-sidebar">
+                <div class="preview-sticky glass-panel">
+                    <div class="preview-header">
+                        <span class="preview-tag">LIVE CARD PREVIEW</span>
+                        <span class="preview-pulse"></span>
+                    </div>
+
+                    <article class="event-card preview-card" id="cardPreview">
+                        <div class="event-card-top">
+                            <span class="event-number">✦</span>
+                            <span class="event-badge badge-cultural" id="prevBadge">🎭 CULTURAL</span>
+                        </div>
+                        <h3 id="prevTitle">Event Title</h3>
+                        <p class="event-organizer" id="prevOrganizer">By Organizing Club</p>
+                        <p class="event-description" id="prevDesc">Provide event description to see it appear here in real time.</p>
+
+                        <div class="event-details">
+                            <span id="prevDate">◷ Date & Time</span>
+                            <span id="prevLoc">⌖ Location</span>
+                        </div>
+
+                        <div class="capacity-mini-bar">
+                            <div class="mini-bar-labels">
+                                <span id="prevSeats">100 seats available</span>
+                                <span id="prevRatio">0 / 100</span>
+                            </div>
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill" id="prevBar" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </article>
+                </div>
+            </aside>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <span>Graphic Era University · College Event Management System</span>
+        <span>Built for campus communities</span>
+    </footer>
+</div>
+
+<script>
+
+(function() {
+    const titleInput = document.getElementById('title');
+    const categorySelect = document.getElementById('category');
+    const organizerInput = document.getElementById('organizer');
+    const locationInput = document.getElementById('location');
+    const dateInput = document.getElementById('eventDate');
+    const capacityInput = document.getElementById('capacity');
+    const registeredInput = document.getElementById('registeredCount');
+    const descInput = document.getElementById('description');
+    const charCount = document.getElementById('charCount');
+    const seatStatusIndicator = document.getElementById('seatStatusIndicator');
+    const capacityFeedback = document.getElementById('capacityFeedback');
+
+    const prevTitle = document.getElementById('prevTitle');
+    const prevBadge = document.getElementById('prevBadge');
+    const prevOrganizer = document.getElementById('prevOrganizer');
+    const prevDesc = document.getElementById('prevDesc');
+    const prevDate = document.getElementById('prevDate');
+    const prevLoc = document.getElementById('prevLoc');
+    const prevSeats = document.getElementById('prevSeats');
+    const prevRatio = document.getElementById('prevRatio');
+    const prevBar = document.getElementById('prevBar');
+    const cardPreview = document.getElementById('cardPreview');
+
+    const catIcons = {
+        'Cultural': '🎭',
+        'Technical': '⚡',
+        'Management': '📈',
+        'Sports': '🏆'
+    };
+
+    function updatePreview() {
+        if (titleInput) {
+            prevTitle.textContent = titleInput.value.trim() || 'Event Title';
+        }
+        if (organizerInput) {
+            prevOrganizer.textContent = organizerInput.value.trim() ? ('By ' + organizerInput.value.trim()) : 'By Campus Committee';
+        }
+        if (descInput) {
+            prevDesc.textContent = descInput.value.trim() || 'Event description will appear here...';
+            charCount.textContent = descInput.value.length + ' / 1500';
+        }
+        if (locationInput) {
+            prevLoc.textContent = '⌖ ' + (locationInput.value.trim() || 'Venue Location');
+        }
+        if (dateInput && dateInput.value) {
+            const dt = new Date(dateInput.value);
+            if (!isNaN(dt.getTime())) {
+                prevDate.textContent = '◷ ' + dt.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' }) + ' · ' + dt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            }
+        } else {
+            prevDate.textContent = '◷ Date & Time';
+        }
+
+        const cat = categorySelect.value || 'Cultural';
+        const icon = catIcons[cat] || '✦';
+        prevBadge.textContent = icon + ' ' + cat.toUpperCase();
+        prevBadge.className = 'event-badge badge-' + cat.toLowerCase();
+
+        // Capacity & Seat Fill logic
+        const cap = parseInt(capacityInput.value, 10) || 100;
+        const reg = parseInt(registeredInput.value, 10) || 0;
+        const remaining = Math.max(0, cap - reg);
+        const pct = Math.min(100, Math.max(0, Math.round((reg / cap) * 100)));
+
+        prevBar.style.width = pct + '%';
+        prevRatio.textContent = reg + ' / ' + cap;
+
+        if (remaining === 0) {
+            prevSeats.innerHTML = '<span style="color: #be123c; font-weight:700;">⚠️ Sold Out (0 spots left)</span>';
+            seatStatusIndicator.textContent = '⚠️ Full capacity reached!';
+            seatStatusIndicator.style.color = '#be123c';
+        } else if (remaining <= 10) {
+            prevSeats.innerHTML = '<span style="color: #ea580c; font-weight:700;">🔥 ' + remaining + ' spots left (Almost Full)</span>';
+            seatStatusIndicator.textContent = '🔥 Fast filling up: only ' + remaining + ' spots remaining.';
+            seatStatusIndicator.style.color = '#ea580c';
+        } else {
+            prevSeats.textContent = remaining + ' seats available';
+            seatStatusIndicator.textContent = remaining + ' spots remaining (' + (100 - pct) + '% open).';
+            seatStatusIndicator.style.color = 'var(--muted)';
+        }
+    }
+
+    [titleInput, categorySelect, organizerInput, locationInput, dateInput, capacityInput, registeredInput, descInput].forEach(el => {
+        if (el) {
+            el.addEventListener('input', updatePreview);
+            el.addEventListener('change', updatePreview);
+        }
+    });
+
+    updatePreview();
+})();
+</script>
+</body>
+</html>

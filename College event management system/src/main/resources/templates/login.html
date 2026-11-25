@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Login · Graphic Era Event Portal</title>
+    <link rel="icon" type="image/jpeg" th:href="@{/images/uu-logo.jpg}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="app-shell auth-shell">
+    <section class="auth-card">
+        <div class="brand-block">
+            <div class="brand-mark">
+                <img th:src="@{/images/uu-logo.jpg}" alt="Graphic Era University Logo" class="brand-logo">
+            </div>
+            <div>
+                <p class="eyebrow light-eyebrow">CAMPUS EVENT PORTAL</p>
+                <h1>Graphic Era University</h1>
+            </div>
+        </div>
+
+        <div class="auth-copy">
+            <p class="eyebrow">SIGN IN</p>
+            <h2>Access your community.</h2>
+            <p>Log in to discover campus fest events, register passes, and manage student activities.</p>
+        </div>
+
+        <form class="auth-form" th:action="@{/login}" method="post">
+            <label for="username">Username</label>
+            <input id="username" name="username" type="text" placeholder="admin or student" required autocomplete="username">
+
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" placeholder="Enter password" required autocomplete="current-password">
+
+            <div th:if="${param.error}" class="alert alert-error">Invalid username or password.</div>
+            <div th:if="${param.logout}" class="alert alert-success">You have been logged out.</div>
+
+            <button class="button button-primary" type="submit">Sign in<span>→</span></button>
+        </form>
+
+        
+        <div class="demo-account-pills">
+            <small class="muted">Quick demo sign-in:</small>
+            <div class="pill-row">
+                <button type="button" class="demo-chip" onclick="fillCreds('student', 'StudentPass123')">
+                    🎒 Student
+                </button>
+                <button type="button" class="demo-chip" onclick="fillCreds('admin', 'AdminPass123')">
+                    🛡️ Admin
+                </button>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+function fillCreds(u, p) {
+    document.getElementById('username').value = u;
+    document.getElementById('password').value = p;
+}
+</script>
+</body>
+</html>

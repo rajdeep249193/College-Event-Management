@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${event.title} + ' · Graphic Era'">Event Details · Graphic Era University</title>
+    <link rel="icon" type="image/jpeg" th:href="@{/images/uu-logo.jpg}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="ambient-mesh" aria-hidden="true">
+    <div class="mesh-orb orb-1"></div>
+    <div class="mesh-orb orb-2"></div>
+    <div class="mesh-orb orb-3"></div>
+</div>
+
+<div class="app-shell">
+    <header class="topbar">
+        <a class="brand" th:href="@{/dashboard}">
+            <span class="brand-mark">
+                <img th:src="@{/images/uu-logo.jpg}" alt="Graphic Era University Logo" class="brand-logo">
+            </span>
+            <span>Graphic Era University</span>
+        </a>
+
+        <nav class="nav-tabs" aria-label="Main navigation">
+            <a class="nav-tab" th:href="@{/dashboard}">Dashboard</a>
+            <a class="nav-tab" th:href="@{/dashboard#events}">All Events</a>
+            <a class="nav-tab" th:if="${isAdmin}" th:href="@{/events/new}">Create event</a>
+        </nav>
+
+        <div class="account-area">
+            <span class="user-chip">
+                <span class="avatar" th:text="${#strings.substring(username, 0, 1).toUpperCase()}">U</span>
+                <span class="user-label">
+                    <strong th:text="${username}">user</strong>
+                    <small th:text="${isAdmin ? 'Administrator' : 'Student / Attendee'}">Role</small>
+                </span>
+            </span>
+            <form th:action="@{/logout}" method="post">
+                <button class="button button-quiet" type="submit">Log out</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="detail-page-container">
+            <a class="back-link" th:href="@{/dashboard}">← Back to Campus Calendar</a>
+
+            <article class="detail-card glass-panel" th:classappend="'category-theme-' + ${event.categorySlug}">
+                <div class="detail-header">
+                    <div class="badge-row">
+                        <span class="event-badge" th:classappend="'badge-' + ${event.categorySlug}">
+                            <span th:text="${event.categoryIcon}">✦</span>
+                            <span th:text="${#strings.toUpperCase(event.category)} + ' EVENT'">CATEGORY</span>
+                        </span>
+                        <span class="status-pill"
+                              th:classappend="${event.isFull()} ? 'status-full' : (${event.spotsRemaining <= 15} ? 'status-warning' : 'status-available')">
+                            <span class="status-dot"></span>
+                            <span th:text="${event.isFull()} ? 'Housefull' : ${event.spotsRemaining} + ' spots left'">Seats</span>
+                        </span>
+                    </div>
+
+                    <h1 th:text="${event.title}">Event Title</h1>
+                    <p class="detail-organizer">Organized by <strong th:text="${event.organizer}">Campus Society</strong></p>
+                </div>
+
+                <div class="detail-meta-grid">
+                    <div class="meta-item">
+                        <span class="meta-icon">📅</span>
+                        <div>
+                            <small>Date & Time</small>
+                            <strong th:text="${#temporals.format(event.eventDate, 'EEEE, d MMMM yyyy · hh:mm a')}">Date</strong>
+                        </div>
+                    </div>
+
+                    <div class="meta-item">
+                        <span class="meta-icon">📍</span>
+                        <div>
+                            <small>Location / Venue</small>
+                            <strong th:text="${event.location}">Venue</strong>
+                        </div>
+                    </div>
+
+                    <div class="meta-item">
+                        <span class="meta-icon">🎟️</span>
+                        <div>
+                            <small>Capacity & Registration</small>
+                            <strong><span th:text="${event.registeredCount}">0</span> / <span th:text="${event.capacity}">100</span> Confirmed</strong>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="capacity-tracker">
+                    <div class="tracker-labels">
+                        <span>Attendance Capacity</span>
+                        <span th:text="${event.fillPercentage} + '% Filled'">0% Filled</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" th:style="'width: ' + ${event.fillPercentage} + '%'"></div>
+                    </div>
+                </div>
+
+                <div class="detail-body">
+                    <h3>About this event</h3>
+                    <p class="detail-description" th:text="${event.description}">Description</p>
+                </div>
+
+                <div class="detail-actions">
+                    <form th:if="${!event.isFull()}" th:action="@{/events/{id}/register(id=${event.id})}" method="post">
+                        <button class="button button-primary button-lg" type="submit">
+                            <span>Reserve My Spot</span> <span aria-hidden="true">→</span>
+                        </button>
+                    </form>
+                    <button th:if="${event.isFull()}" class="button button-outline" disabled>
+                        Sold Out / Registrations Closed
+                    </button>
+
+                    <div class="admin-group" th:if="${isAdmin}">
+                        <a class="button button-outline" th:href="@{/events/{id}/edit(id=${event.id})}">Edit</a>
+                        <form th:action="@{/events/{id}/delete(id=${event.id})}" method="post"
+                              onsubmit="return confirm('Delete this event?');">
+                            <button class="button button-danger" type="submit">Delete</button>
+                        </form>
+                    </div>
+                </div>
+            </article>
+        </div>
+    </main>
+
+    <footer class="footer">
+        <span>Graphic Era University · College Event Management System</span>
+        <span>Built for Vibrant Campus Life</span>
+    </footer>
+</div>
+</body>
+</html>

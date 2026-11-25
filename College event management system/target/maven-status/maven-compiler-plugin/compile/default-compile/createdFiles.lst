@@ -1,0 +1,5 @@
+com\example\collegeevents\CollegeEventsApplication.class
+com\example\collegeevents\model\Event.class
+com\example\collegeevents\repository\EventRepository.class
+com\example\collegeevents\config\SecurityConfig.class
+com\example\collegeevents\controller\EventController.class

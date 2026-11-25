@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Dashboard · Graphic Era Fest & Events</title>
+    <link rel="icon" type="image/jpeg" th:href="@{/images/uu-logo.jpg}">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+
+<div class="ambient-mesh" aria-hidden="true">
+    <div class="mesh-orb orb-1"></div>
+    <div class="mesh-orb orb-2"></div>
+    <div class="mesh-orb orb-3"></div>
+</div>
+
+<div class="app-shell">
+    <header class="topbar">
+        <a class="brand" th:href="@{/dashboard}">
+            <span class="brand-mark">
+                <img th:src="@{/images/uu-logo.jpg}" alt="Graphic Era University Logo" class="brand-logo">
+            </span>
+            <span>Graphic Era University</span>
+        </a>
+
+        <nav class="nav-tabs" aria-label="Main navigation">
+            <a class="nav-tab active" th:href="@{/dashboard}">Dashboard</a>
+            <a class="nav-tab" href="#events">Fest Events</a>
+            <a class="nav-tab" th:if="${isAdmin}" th:href="@{/events/new}">Create event</a>
+        </nav>
+
+        <div class="account-area">
+            <span class="user-chip">
+                <span class="avatar" th:text="${#strings.substring(username, 0, 1).toUpperCase()}">U</span>
+                <span class="user-label">
+                    <strong th:text="${username}">user</strong>
+                    <small th:text="${isAdmin ? 'Administrator' : 'Student / Attendee'}">Role</small>
+                </span>
+            </span>
+            <form th:action="@{/logout}" method="post">
+                <button class="button button-quiet" type="submit">Log out</button>
+            </form>
+        </div>
+    </header>
+
+    <main class="content">
+        <!-- Toast / Flash Notifications -->
+        <div th:if="${successMessage}" class="alert alert-success alert-floating" id="flashAlert">
+            <span>🎉</span>
+            <span th:text="${successMessage}">Registration successful!</span>
+            <button type="button" class="alert-close" onclick="this.parentElement.remove()">✕</button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-error alert-floating" id="flashAlert">
+            <span>⚠️</span>
+            <span th:text="${errorMessage}">Notice</span>
+            <button type="button" class="alert-close" onclick="this.parentElement.remove()">✕</button>
+        </div>
+
+        <!-- Hero Section with Glassmorphism Accent -->
+        <section class="hero glass-hero">
+            <div class="hero-copy">
+                <p class="eyebrow light-eyebrow">ANNUAL CAMPUS FEST 2026</p>
+                <h1>Ignite Your<br><span>Campus Spark.</span></h1>
+                <p>Discover premier Cultural battles, high-stakes Tech hackathons, boardroom Management challenges, and adrenaline-charged Sports leagues.</p>
+                <div class="hero-actions">
+                    <a class="button button-light" href="#events">Explore Fest Lineup <span aria-hidden="true">↓</span></a>
+                    <a th:if="${isAdmin}" class="button button-quiet" th:href="@{/events/new}">＋ Post New Event</a>
+                </div>
+            </div>
+            <div class="hero-art" aria-hidden="true">
+                <div class="hero-circle circle-back"></div>
+                <div class="hero-circle circle-front">
+                    <img th:src="@{/images/uu-logo.jpg}" alt="Graphic Era University" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">
+                </div>
+                <div class="floating-card glass-panel">
+                    Live Fest Central<br>
+                    <strong>4 Vibrant Arenas</strong>
+                </div>
+            </div>
+        </section>
+
+        
+        <section id="events" class="events-section">
+            <div class="section-heading">
+                <div>
+                    <p class="eyebrow">FESTIVAL SCHEDULE & TICKETING</p>
+                    <h2>Explore Campus Events</h2>
+                    <p class="muted">Click any event card to view full details or reserve your seat instantly.</p>
+                </div>
+                <div class="heading-controls">
+                    <div class="search-box">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="eventSearchInput" placeholder="Search events, venues..." aria-label="Search events">
+                    </div>
+                    <a th:if="${isAdmin}" class="button button-primary" th:href="@{/events/new}">
+                        <span aria-hidden="true">＋</span> New event
+                    </a>
+                </div>
+            </div>
+
+           
+            <div class="category-filter-nav" role="tablist" aria-label="Event category filters">
+                <button class="filter-tab active" data-category="all" role="tab" aria-selected="true">
+                    <span>✨ All Events</span>
+                    <span class="tab-count" th:text="${#lists.size(events)}">12</span>
+                </button>
+                <button class="filter-tab" data-category="cultural" role="tab" aria-selected="false">
+                    <span>🎭 Cultural</span>
+                    <span class="tab-count" id="countCultural">0</span>
+                </button>
+                <button class="filter-tab" data-category="technical" role="tab" aria-selected="false">
+                    <span>⚡ Technical</span>
+                    <span class="tab-count" id="countTechnical">0</span>
+                </button>
+                <button class="filter-tab" data-category="management" role="tab" aria-selected="false">
+                    <span>📈 Management</span>
+                    <span class="tab-count" id="countManagement">0</span>
+                </button>
+                <button class="filter-tab" data-category="sports" role="tab" aria-selected="false">
+                    <span>🏆 Sports</span>
+                    <span class="tab-count" id="countSports">0</span>
+                </button>
+            </div>
+
+            
+            <div class="event-grid" id="eventGrid" th:if="${!#lists.isEmpty(events)}">
+                <article class="event-card glass-panel clickable-card"
+                         th:each="event, stat : ${events}"
+                         th:attr="data-id=${event.id},
+                                 data-category=${event.categorySlug},
+                                 data-title=${event.title},
+                                 data-location=${event.location},
+                                 data-organizer=${event.organizer},
+                                 data-description=${event.description},
+                                 data-date=${#temporals.format(event.eventDate, 'EEE, d MMM yyyy · hh:mm a')},
+                                 data-capacity=${event.capacity},
+                                 data-registered=${event.registeredCount},
+                                 data-spots=${event.spotsRemaining},
+                                 data-isfull=${event.isFull()}"
+                         tabindex="0"
+                         role="button"
+                         th:aria-label="'View details for ' + ${event.title}">
+
+                   
+                    <div class="card-glow-accent" th:classappend="'glow-' + ${event.categorySlug}"></div>
+
+                    <div class="event-card-top">
+                        <span class="event-number" th:text="${stat.count < 10 ? '0' + stat.count : stat.count}">01</span>
+                        <div class="badge-group">
+                            <span class="event-badge" th:classappend="'badge-' + ${event.categorySlug}">
+                                <span th:text="${event.categoryIcon}">✦</span>
+                                <span th:text="${#strings.toUpperCase(event.category)}">CATEGORY</span>
+                            </span>
+                            <span class="status-pill"
+                                  th:classappend="${event.isFull()} ? 'status-full' : (${event.spotsRemaining <= 20} ? 'status-warning' : 'status-available')">
+                                <span class="status-dot"></span>
+                                <span th:text="${event.isFull()} ? 'Housefull' : ${event.spotsRemaining} + ' spots left'">Seats</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <h3 class="event-title" th:text="${event.title}">Event title</h3>
+                    <p class="event-organizer-meta">
+                        <span class="organizer-icon">🏛️</span>
+                        <span th:text="${event.organizer}">Campus Committee</span>
+                    </p>
+
+                    <p class="event-description" th:text="${event.description}">Event description</p>
+
+                    <div class="event-details">
+                        <span>◷ <span th:text="${#temporals.format(event.eventDate, 'EEE, d MMM · HH:mm')}">Date</span></span>
+                        <span>⌖ <span th:text="${event.location}">Location</span></span>
+                    </div>
+
+                   
+                    <div class="capacity-mini-bar">
+                        <div class="mini-bar-labels">
+                            <span>Capacity status</span>
+                            <span><strong th:text="${event.registeredCount}">0</strong> / <span th:text="${event.capacity}">100</span></span>
+                        </div>
+                        <div class="progress-bar-bg">
+                            <div class="progress-bar-fill" th:style="'width: ' + ${event.fillPercentage} + '%'"></div>
+                        </div>
+                    </div>
+
+                    <div class="card-footer-actions" onclick="event.stopPropagation()">
+                        <div class="primary-actions">
+                            <button type="button" class="button button-primary button-sm rsvp-open-btn"
+                                    th:disabled="${event.isFull()}"
+                                    th:attr="data-id=${event.id}">
+                                <span th:text="${event.isFull() ? 'Full' : '⚡ RSVP / Join'}">RSVP</span>
+                            </button>
+                            <a class="button button-outline button-sm" th:href="@{/events/{id}(id=${event.id})}">
+                                Details <span>→</span>
+                            </a>
+                        </div>
+
+                        <div class="admin-actions" th:if="${isAdmin}">
+                            <a class="action-icon-link" title="Edit event" th:href="@{/events/{id}/edit(id=${event.id})}">✏️</a>
+                            <form th:action="@{/events/{id}/delete(id=${event.id})}" method="post"
+                                  onsubmit="return confirm('Delete this fest event?');" style="display:inline;">
+                                <button class="action-icon-btn" type="submit" title="Delete event">🗑️</button>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+            </div>
+
+            
+            <div class="empty-state glass-panel" id="noFilterMatch" style="display:none;">
+                <div class="empty-icon">🔍</div>
+                <h3>No matching events found</h3>
+                <p class="muted">Try another search keyword or switch the category filter tab.</p>
+                <button type="button" class="button button-outline" id="resetFiltersBtn">Reset Filters</button>
+            </div>
+
+           
+            <div class="empty-state glass-panel" th:if="${#lists.isEmpty(events)}">
+                <div class="empty-icon">✦</div>
+                <h3>No events yet</h3>
+                <p class="muted">New fest events will appear here once published.</p>
+                <a th:if="${isAdmin}" class="button button-primary" th:href="@{/events/new}">
+                    Create the first event
+                </a>
+            </div>
+        </section>
+
+        
+        <div class="modal-backdrop" id="rsvpModal" aria-hidden="true" role="dialog" aria-labelledby="modalEventTitle">
+            <div class="modal-container glass-panel">
+                <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close modal">✕</button>
+
+                <div class="modal-header">
+                    <span class="event-badge badge-cultural" id="modalCategoryBadge">🎭 CULTURAL EVENT</span>
+                    <h2 id="modalEventTitle">Event Title</h2>
+                    <p class="muted" id="modalOrganizer">Organized by Club</p>
+                </div>
+
+                <div class="modal-meta-bar">
+                    <div>
+                        <small>📅 Date & Time</small>
+                        <strong id="modalEventDate">Date</strong>
+                    </div>
+                    <div>
+                        <small>📍 Venue</small>
+                        <strong id="modalLocation">Location</strong>
+                    </div>
+                    <div>
+                        <small>🎟️ Seats Left</small>
+                        <strong id="modalSeatsLeft" class="accent-text">Spots</strong>
+                    </div>
+                </div>
+
+                <div class="modal-body">
+                    <p class="modal-description" id="modalDescription">Description text goes here.</p>
+
+                    <div class="modal-form-wrap">
+                        <h4>Reserve Instant Entry Pass</h4>
+                        <form id="instantRsvpForm" th:action="@{/events/0/register}" method="post">
+                            <input type="hidden" id="modalEventId" name="eventId" value="">
+
+                            <div class="form-row-duo">
+                                <div class="form-group">
+                                    <label for="studentNameInput">Your Name</label>
+                                    <input type="text" id="studentNameInput" name="studentName"
+                                           th:value="${username != 'Guest' ? username : ''}"
+                                           placeholder="e.g. Alex Sharma" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="studentRollInput">Student Roll / ID</label>
+                                    <input type="text" id="studentRollInput" name="studentRoll"
+                                           placeholder="e.g. 2024-CS-108" required>
+                                </div>
+                            </div>
+
+                            <div class="modal-actions">
+                                <button type="button" class="button button-outline" id="modalCancelBtn">Cancel</button>
+                                <button type="submit" class="button button-primary" id="confirmRsvpBtn">
+                                    Confirm RSVP Pass <span>→</span>
+                                </button>
+                            </div>
+                        </form>
+                        <div id="modalAlertMessage" class="modal-feedback" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <span>Graphic Era · College Event Management System</span>
+            <span>Made with 💜 for Campus Fests</span>
+        </footer>
+    </main>
+</div>
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const filterTabs = document.querySelectorAll('.filter-tab');
+    const cards = document.querySelectorAll('.event-card');
+    const searchInput = document.getElementById('eventSearchInput');
+    const noFilterMatch = document.getElementById('noFilterMatch');
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+
+    
+    const counts = { cultural: 0, technical: 0, management: 0, sports: 0 };
+    cards.forEach(card => {
+        const cat = card.getAttribute('data-category');
+        if (counts.hasOwnProperty(cat)) {
+            counts[cat]++;
+        }
+    });
+    if (document.getElementById('countCultural')) document.getElementById('countCultural').textContent = counts.cultural;
+    if (document.getElementById('countTechnical')) document.getElementById('countTechnical').textContent = counts.technical;
+    if (document.getElementById('countManagement')) document.getElementById('countManagement').textContent = counts.management;
+    if (document.getElementById('countSports')) document.getElementById('countSports').textContent = counts.sports;
+
+    let activeCategory = 'all';
+    let searchQuery = '';
+
+    function applyFilters() {
+        let visibleCount = 0;
+        cards.forEach(card => {
+            const cat = card.getAttribute('data-category') || '';
+            const title = (card.getAttribute('data-title') || '').toLowerCase();
+            const location = (card.getAttribute('data-location') || '').toLowerCase();
+            const desc = (card.getAttribute('data-description') || '').toLowerCase();
+
+            const matchesCategory = (activeCategory === 'all' || cat === activeCategory);
+            const matchesSearch = !searchQuery || title.includes(searchQuery) || location.includes(searchQuery) || desc.includes(searchQuery);
+
+            if (matchesCategory && matchesSearch) {
+                card.style.display = 'flex';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        if (noFilterMatch) {
+            noFilterMatch.style.display = (visibleCount === 0 && cards.length > 0) ? 'block' : 'none';
+        }
+    }
+
+    filterTabs.forEach(tab => {
+        tab.addEventListener('click', function () {
+            filterTabs.forEach(t => {
+                t.classList.remove('active');
+                t.setAttribute('aria-selected', 'false');
+            });
+            this.classList.add('active');
+            this.setAttribute('aria-selected', 'true');
+            activeCategory = this.getAttribute('data-category');
+            applyFilters();
+        });
+    });
+
+    if (searchInput) {
+        searchInput.addEventListener('input', function () {
+            searchQuery = this.value.trim().toLowerCase();
+            applyFilters();
+        });
+    }
+
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', function () {
+            activeCategory = 'all';
+            searchQuery = '';
+            if (searchInput) searchInput.value = '';
+            filterTabs.forEach(t => {
+                t.classList.toggle('active', t.getAttribute('data-category') === 'all');
+            });
+            applyFilters();
+        });
+    }
+
+    
+    const modal = document.getElementById('rsvpModal');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+    const modalCancelBtn = document.getElementById('modalCancelBtn');
+    const modalEventTitle = document.getElementById('modalEventTitle');
+    const modalCategoryBadge = document.getElementById('modalCategoryBadge');
+    const modalOrganizer = document.getElementById('modalOrganizer');
+    const modalEventDate = document.getElementById('modalEventDate');
+    const modalLocation = document.getElementById('modalLocation');
+    const modalSeatsLeft = document.getElementById('modalSeatsLeft');
+    const modalDescription = document.getElementById('modalDescription');
+    const modalEventId = document.getElementById('modalEventId');
+    const instantRsvpForm = document.getElementById('instantRsvpForm');
+    const modalAlertMessage = document.getElementById('modalAlertMessage');
+    const confirmRsvpBtn = document.getElementById('confirmRsvpBtn');
+
+    function openModalWithEvent(card) {
+        const id = card.getAttribute('data-id');
+        const title = card.getAttribute('data-title');
+        const cat = card.getAttribute('data-category');
+        const location = card.getAttribute('data-location');
+        const organizer = card.getAttribute('data-organizer');
+        const desc = card.getAttribute('data-description');
+        const date = card.getAttribute('data-date');
+        const spots = parseInt(card.getAttribute('data-spots'), 10);
+        const isFull = card.getAttribute('data-isfull') === 'true';
+
+        modalEventId.value = id;
+        modalEventTitle.textContent = title;
+        modalOrganizer.textContent = 'Organized by ' + (organizer || 'Campus Committee');
+        modalEventDate.textContent = date;
+        modalLocation.textContent = location;
+        modalDescription.textContent = desc;
+
+        modalCategoryBadge.className = 'event-badge badge-' + cat;
+        const iconMap = { cultural: '🎭', technical: '⚡', management: '📈', sports: '🏆' };
+        modalCategoryBadge.textContent = (iconMap[cat] || '✦') + ' ' + cat.toUpperCase() + ' EVENT';
+
+        modalSeatsLeft.textContent = isFull ? 'Sold Out' : (spots + ' Spots Available');
+        modalSeatsLeft.style.color = isFull ? '#be123c' : '#047857';
+
+        instantRsvpForm.action = '/events/' + id + '/register';
+
+        if (isFull) {
+            confirmRsvpBtn.disabled = true;
+            confirmRsvpBtn.textContent = 'Sold Out';
+        } else {
+            confirmRsvpBtn.disabled = false;
+            confirmRsvpBtn.textContent = 'Confirm RSVP Pass →';
+        }
+
+        modalAlertMessage.style.display = 'none';
+        modal.classList.add('modal-visible');
+        modal.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeModal() {
+        modal.classList.remove('modal-visible');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+    }
+
+    
+    cards.forEach(card => {
+        card.addEventListener('click', function (e) {
+            // Avoid triggering when clicking links or buttons directly inside footer
+            if (e.target.closest('a') || e.target.closest('button')) {
+                return;
+            }
+            openModalWithEvent(card);
+        });
+
+        // Keyboard navigation (Enter / Space opens modal)
+        card.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                if (!e.target.closest('a') && !e.target.closest('button')) {
+                    e.preventDefault();
+                    openModalWithEvent(card);
+                }
+            }
+        });
+    });
+
+    document.querySelectorAll('.rsvp-open-btn').forEach(btn => {
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            const card = this.closest('.event-card');
+            if (card) openModalWithEvent(card);
+        });
+    });
+
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeModal);
+    if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', function (e) {
+        if (e.target === modal) closeModal();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && modal.classList.contains('modal-visible')) {
+            closeModal();
+        }
+    });
+
+    
+    if (instantRsvpForm) {
+        instantRsvpForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const eventId = modalEventId.value;
+            const studentName = document.getElementById('studentNameInput').value;
+
+            const token = document.querySelector('meta[name="_csrf"]')?.getAttribute('content');
+            const header = document.querySelector('meta[name="_csrf_header"]')?.getAttribute('content');
+
+            confirmRsvpBtn.disabled = true;
+            confirmRsvpBtn.textContent = 'Reserving...';
+
+            const headers = {
+                'X-Requested-With': 'XMLHttpRequest'
+            };
+            if (token && header) {
+                headers[header] = token;
+            }
+
+            fetch('/events/' + eventId + '/rsvp?studentName=' + encodeURIComponent(studentName), {
+                method: 'POST',
+                headers: headers
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    modalAlertMessage.className = 'modal-feedback feedback-success';
+                    modalAlertMessage.innerHTML = '🎉 <strong>Confirmed!</strong> ' + data.message;
+                    modalAlertMessage.style.display = 'block';
+                    confirmRsvpBtn.textContent = 'Pass Reserved ✓';
+
+                    // Update corresponding card live in DOM
+                    const targetCard = document.querySelector(`.event-card[data-id="${eventId}"]`);
+                    if (targetCard) {
+                        targetCard.setAttribute('data-spots', data.spotsRemaining);
+                        targetCard.setAttribute('data-registered', data.registeredCount);
+                        targetCard.setAttribute('data-isfull', data.isFull);
+
+                        const countEl = targetCard.querySelector('.capacity-mini-bar strong');
+                        if (countEl) countEl.textContent = data.registeredCount;
+
+                        const barEl = targetCard.querySelector('.progress-bar-fill');
+                        if (barEl) barEl.style.width = data.fillPercentage + '%';
+
+                        const pillEl = targetCard.querySelector('.status-pill');
+                        if (pillEl) {
+                            if (data.isFull) {
+                                pillEl.className = 'status-pill status-full';
+                                pillEl.innerHTML = '<span class="status-dot"></span><span>Housefull</span>';
+                            } else {
+                                pillEl.className = 'status-pill ' + (data.spotsRemaining <= 20 ? 'status-warning' : 'status-available');
+                                pillEl.innerHTML = '<span class="status-dot"></span><span>' + data.spotsRemaining + ' spots left</span>';
+                            }
+                        }
+                    }
+
+                    setTimeout(() => {
+                        closeModal();
+                    }, 1800);
+                } else {
+                    modalAlertMessage.className = 'modal-feedback feedback-error';
+                    modalAlertMessage.innerHTML = '⚠️ ' + (data.message || 'Could not complete RSVP.');
+                    modalAlertMessage.style.display = 'block';
+                    confirmRsvpBtn.disabled = false;
+                    confirmRsvpBtn.textContent = 'Try Again';
+                }
+            })
+            .catch(err => {
+                
+                instantRsvpForm.submit();
+            });
+        });
+    }
+});
+</script>
+</body>
+</html>
